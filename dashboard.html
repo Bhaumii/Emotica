@@ -3,161 +3,380 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Emotica</title>
-  <link rel="stylesheet" href="style.css"/>
+  <title>Emotica — Developer Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
-  <!-- MediaPipe loaded in head so they're ready before game starts -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#06000f;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;}
+
+    #topbar{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:16px 40px;border-bottom:1px solid rgba(255,45,120,0.2);
+      background:rgba(6,0,15,0.95);backdrop-filter:blur(10px);
+      position:sticky;top:0;z-index:10;
+    }
+    #topbar h1{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;}
+    #topbar h1 span{color:#ff2d78;}
+    .topbar-right{display:flex;align-items:center;gap:16px;}
+    .badge{background:rgba(0,245,212,0.1);border:1px solid rgba(0,245,212,0.3);color:#00f5d4;font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:3px;padding:5px 14px;border-radius:100px;}
+    #session-count-badge{background:rgba(255,45,120,0.1);border:1px solid rgba(255,45,120,0.3);color:#ff2d78;font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:2px;padding:5px 14px;border-radius:100px;}
+    #clear-btn{background:transparent;border:1px solid rgba(255,255,255,0.15);color:#555;font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:2px;padding:5px 14px;border-radius:100px;cursor:pointer;transition:all 0.2s;}
+    #clear-btn:hover{border-color:#ff2d78;color:#ff2d78;}
+
+    .page { padding:40px 60px; max-width:1600px; margin:0 auto; }
+
+    .section-label{font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:5px;text-transform:uppercase;color:#00f5d4;margin-bottom:18px;}
+
+    /* no data */
+    #no-data{text-align:center;padding:80px 20px;color:#444;}
+    #no-data h2{font-family:'Space Grotesk',sans-serif;font-size:24px;margin-bottom:12px;color:#666;}
+    #no-data p{font-size:14px;line-height:1.8;}
+    #no-data a{color:#ff2d78;}
+
+    /* kpi */
+    .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:36px;}
+    .kpi-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:18px 20px;}
+    .kpi-card.pink{border-color:rgba(255,45,120,0.3);}
+    .kpi-card.teal{border-color:rgba(0,245,212,0.3);}
+    .kpi-card.gold{border-color:rgba(255,215,0,0.3);}
+    .kpi-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#555;margin-bottom:10px;}
+    .kpi-value{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:#fff;}
+    .kpi-value.pink{color:#ff2d78;}.kpi-value.teal{color:#00f5d4;}.kpi-value.gold{color:#ffd700;}
+    .kpi-sub{font-size:11px;color:#444;margin-top:5px;}
+
+    /* chart */
+    .charts-row { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-bottom:40px; }
+    @media(max-width:800px){.charts-row{grid-template-columns:1fr;}}
+    .chart-panel{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:22px;}
+    .chart-panel h3{font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#c9b8ff;margin-bottom:18px;}
+    .chart-panel canvas { width:100%!important; height:300px!important; }
+
+    /* heatmap */
+    #heatmap-grid{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;}
+    .hm-cell{width:18px;height:18px;border-radius:3px;cursor:default;transition:opacity 0.15s;flex-shrink:0;}
+    .hm-cell:hover{opacity:0.65;}
+    .hm-legend{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap;}
+    .hm-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#555;}
+    .hm-legend-dot{width:12px;height:12px;border-radius:2px;}
+
+    /* session table */
+    .session-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:36px;}
+    .session-table th{font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#555;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:left;}
+    .session-table td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);color:#c9b8ff;vertical-align:middle;}
+    .session-table tr:hover td{background:rgba(255,255,255,0.02);}
+    .pill{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10px;font-family:'Space Grotesk',sans-serif;letter-spacing:1px;}
+    .pill.good{background:rgba(0,245,212,0.15);color:#00f5d4;border:1px solid rgba(0,245,212,0.3);}
+    .pill.warn{background:rgba(255,215,0,0.1);color:#ffd700;border:1px solid rgba(255,215,0,0.3);}
+    .pill.bad{background:rgba(255,45,120,0.12);color:#ff2d78;border:1px solid rgba(255,45,120,0.3);}
+
+    /* ai insights */
+    #ai-block{background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(0,245,212,0.04));border:1px solid rgba(255,45,120,0.2);border-radius:10px;padding:26px;margin-bottom:36px;}
+    #ai-block h3{font-family:'Space Grotesk',sans-serif;color:#ffd700;margin-bottom:16px;letter-spacing:2px;font-size:13px;text-transform:uppercase;}
+    #ai-recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+    .rec-card{background:rgba(0,0,0,0.3);border-radius:8px;padding:16px;}
+    .rec-tag{font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+    .rec-tag.alert{color:#ff2d78;}.rec-tag.tip{color:#00f5d4;}.rec-tag.info{color:#ffd700;}
+    .rec-card p{font-size:13px;line-height:1.75;color:#c9b8ff;}
+    .rec-card strong{color:#fff;}
+
+    /* info cards */
+    .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:40px;}
+    .info-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:22px;}
+    .info-tag{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#00f5d4;margin-bottom:10px;}
+    .info-card h3{font-family:'Space Grotesk',sans-serif;font-size:15px;margin-bottom:10px;}
+    .info-card p{font-size:13px;line-height:1.75;color:#c9b8ff;}
+  </style>
 </head>
 <body>
 
-  <!-- SETTINGS ICON — always visible, opens dashboard -->
-  <div id="settings-icon" onclick="window.open('dashboard.html','_blank')" title="Developer Portal">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
+<div id="topbar">
+  <h1>EMOTICA <span>NOW</span> — Developer Portal</h1>
+  <div class="topbar-right">
+    <span id="session-count-badge">0 Sessions</span>
+    <span class="badge">COMPANY ACCESS</span>
+    <button id="clear-btn" onclick="clearData()">Clear All Data</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- NO DATA STATE -->
+  <div id="no-data" style="display:none;">
+    <h2>No Session Data Yet</h2>
+    <p>Play the game first and allow data sharing when prompted.<br/>All sessions are stored locally on this device — no internet required.<br/><br/><a href="index.html">Go play Emotica Now</a></p>
   </div>
 
-  <!-- ══════════════════════════════════════
-       STEP 1: CONSENT POPUP (first visit only)
-       ══════════════════════════════════════ -->
-  <div id="consent-overlay" style="display:none;">
-    <div id="consent-box">
-      <p class="subtitle">DATA & PRIVACY</p>
-      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;margin-bottom:14px;">Share your session data?</h2>
-      <p style="font-size:14px;color:#c9b8ff;line-height:1.8;margin-bottom:20px;">
-        Emotica can anonymously store your gameplay and emotion data to help improve game design.<br/><br/>
-        <span style="color:#ffd700;font-size:13px;">No camera footage stored. All processing happens locally on your device.</span>
-      </p>
-      <div style="display:flex;gap:12px;justify-content:center;">
-        <button id="consent-yes" style="border-color:#00f5d4;color:#00f5d4;">Yes, Share</button>
-        <button id="consent-no" style="border-color:#555;color:#888;">No Thanks</button>
+  <!-- EVERYTHING BELOW IS SHOWN WHEN DATA EXISTS -->
+  <div id="dashboard-content" style="display:none;">
+
+    <!-- KPI ROW -->
+    <div class="section-label">Aggregate Performance — All Sessions</div>
+    <div class="kpi-row">
+      <div class="kpi-card pink"><div class="kpi-label">Total Sessions</div><div class="kpi-value pink" id="kpi-sessions">—</div><div class="kpi-sub">recorded games</div></div>
+      <div class="kpi-card gold"><div class="kpi-label">All-Time Best</div><div class="kpi-value gold" id="kpi-best">—</div><div class="kpi-sub">highest score ever</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg Session Length</div><div class="kpi-value" id="kpi-avgtime">—</div><div class="kpi-sub">seconds per game</div></div>
+      <div class="kpi-card teal"><div class="kpi-label">Avg Engagement</div><div class="kpi-value teal" id="kpi-engage">—</div><div class="kpi-sub">% time Engaged</div></div>
+      <div class="kpi-card pink"><div class="kpi-label">Avg Frustration</div><div class="kpi-value pink" id="kpi-frust">—</div><div class="kpi-sub">% time Frustrated</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Ragebait</div><div class="kpi-value" id="kpi-rage">—</div><div class="kpi-sub">intervention events</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg Score</div><div class="kpi-value" id="kpi-avgscore">—</div><div class="kpi-sub">per session</div></div>
+      <div class="kpi-card teal"><div class="kpi-label">Retention Score</div><div class="kpi-value teal" id="kpi-retention">—</div><div class="kpi-sub">engagement ÷ frustration</div></div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="section-label">Trends Across Sessions</div>
+    <div class="charts-row">
+      <div class="chart-panel">
+        <h3>Score Per Session</h3>
+        <canvas id="score-trend-chart"></canvas>
       </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       STEP 2: CAMERA PROMPT (before game starts)
-       Shows OVER the intro so user enables camera first
-       ══════════════════════════════════════ -->
-  <div id="camera-prompt" style="display:none;">
-    <div id="camera-prompt-box">
-      <div class="cam-icon">🎥</div>
-      <p class="subtitle">EMOTION ENGINE</p>
-      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:24px;margin-bottom:16px;color:#fff;">Enable your camera</h2>
-      <p style="font-size:14px;color:#c9b8ff;line-height:1.9;margin-bottom:28px;">
-        Emotica reads your <strong style="color:#fff;">facial expressions</strong> to adapt the game difficulty in real time — making it harder when you're engaged, easier when you're frustrated.<br/><br/>
-        <span style="color:#ffd700;font-size:12px;">✓ No footage stored &nbsp;&nbsp; ✓ Processed locally &nbsp;&nbsp; ✓ Consent-based</span>
-      </p>
-      <div style="display:flex;gap:12px;justify-content:center;">
-        <button id="prompt-enable" style="border-color:#00f5d4;color:#00f5d4;">Enable Camera</button>
-        <button id="prompt-skip" style="border-color:#555;color:#666;font-size:12px;padding:10px 24px;">Skip</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       INTRO SCREEN
-       ══════════════════════════════════════ -->
-  <div id="intro-screen">
-    <div id="intro-content">
-      <h1 class="glow-title">EMOTICA</h1>
-      <p class="tagline">Your emotions control the game</p>
-      <button id="start-btn">▶ &nbsp;Play</button>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       GAME SCREEN
-       ══════════════════════════════════════ -->
-  <div id="game-screen" style="display:none;">
-
-    <!-- HUD bar — fixed 46px height -->
-    <div id="hud">
-      <button id="camera-toggle" onclick="toggleCamera()">📷 Camera: OFF</button>
-      <span class="hud-score">Score <strong id="score-display">0</strong></span>
-      <span class="hud-best">Best <strong id="highscore-display">0</strong></span>
-      <span class="hud-health">HP <strong id="health-display">100</strong></span>
-      <span class="hud-mood">Mood <strong id="mood-display">Demo</strong></span>
-      <span class="hud-diff">Diff <strong id="diff-display">NORMAL 1.0x</strong></span>
-    </div>
-
-    <!-- Canvas — takes all remaining vertical space -->
-    <canvas id="gameCanvas"></canvas>
-
-    <!-- Camera preview: top-right corner, over canvas -->
-    <video id="cam-preview" autoplay muted playsinline></video>
-    <!-- Hand landmark canvas: overlaps camera preview exactly -->
-    <canvas id="hand-canvas"></canvas>
-
-    <!-- Ragebait flash overlay (full screen pink tint) -->
-    <div id="ragebait-overlay"></div>
-    <!-- Ragebait center message -->
-    <div id="ragebait-msg" style="display:none;">😤 Take a breath. System recalibrating...</div>
-
-    <!-- Pause screen (over everything in game) -->
-    <div id="pause-screen" style="display:none;">
-      <div id="pause-box">
-        <p class="subtitle">PAUSED</p>
-        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:28px;margin-bottom:12px;color:#fff;">Take a breath</h2>
-        <p style="color:#c9b8ff;font-size:14px;margin-bottom:28px;">Press <strong style="color:#fff;">Space</strong> to resume</p>
-        <div id="breathe-circle"></div>
-        <p style="color:#555;font-size:12px;margin-top:20px;">
-          Current mood: <strong id="pause-mood" style="color:#00f5d4;">—</strong>
-        </p>
+      <div class="chart-panel">
+        <h3>Overall Mood Distribution</h3>
+        <canvas id="mood-dist-chart"></canvas>
       </div>
     </div>
 
-  </div><!-- end game-screen -->
-
-  <!-- ══════════════════════════════════════
-       GAME OVER SCREEN
-       ══════════════════════════════════════ -->
-  <div id="gameover-screen" style="display:none;">
-    <p class="subtitle">GAME OVER</p>
-    <h1 class="glow-title" id="final-score-text"></h1>
-    <p class="tagline" id="survived-text"></p>
-    <p id="gameover-highscore" style="font-family:'Space Grotesk',sans-serif;color:#ffd700;font-size:18px;margin-bottom:8px;letter-spacing:2px;"></p>
-    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
-      <button id="restart-btn">Play Again</button>
-      <button id="report-btn" style="border-color:#00f5d4;color:#00f5d4;">Mood Report</button>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════
-       SESSION REPORT SCREEN
-       ══════════════════════════════════════ -->
-  <div id="report-screen" style="display:none;">
-    <div id="report-header">
-      <p class="subtitle">SESSION REPORT</p>
-      <h1 class="glow-title" style="font-size:52px;">Emotica</h1>
-    </div>
-    <div id="report-content">
-      <div class="report-panel">
-        <p class="chart-label">Score + Health Over Time</p>
-        <div class="chart-wrapper"><canvas id="moodLineChart"></canvas></div>
-      </div>
-      <div class="report-panel">
-        <p class="chart-label">Mood Split</p>
-        <div class="chart-wrapper"><canvas id="moodPieChart"></canvas></div>
-      </div>
-      <div class="report-panel">
-        <p class="chart-label">Session Stats</p>
-        <div id="stats-box"></div>
+    <!-- HEATMAP -->
+    <div class="section-label">Emotion Timeline — Latest Session</div>
+    <div class="chart-panel" style="margin-bottom:36px;">
+      <h3>Every 2-second emotion reading (most recent game)</h3>
+      <div id="heatmap-grid"></div>
+      <div class="hm-legend">
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#ff2d78;"></div>Frustrated</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#00f5d4;"></div>Engaged</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#ffd700;"></div>Bored</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#c9b8ff;"></div>Surprised</div>
       </div>
     </div>
-    <div id="report-footer">
-      <button id="play-again-from-report">Play Again</button>
+
+    <!-- SESSION TABLE -->
+    <div class="section-label">All Sessions</div>
+    <table class="session-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Score</th>
+          <th>Duration</th>
+          <th>Dominant Mood</th>
+          <th>Frustration</th>
+          <th>Engagement</th>
+          <th>Ragebait</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody id="session-table-body"></tbody>
+    </table>
+
+    <!-- AI RECOMMENDATIONS -->
+    <div class="section-label">AI-Generated Design Recommendations</div>
+    <div id="ai-block">
+      <h3>Based on Real Session Data</h3>
+      <div id="ai-recs"></div>
     </div>
-  </div>
 
-  <!-- Chart.js — loaded once at bottom -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="emotion.js"></script>
-  <script src="game.js"></script>
+    <!-- WHAT THIS MEANS -->
+    <div class="section-label">Why This Data Matters</div>
+    <div class="info-grid">
+      <div class="info-card"><div class="info-tag">How It Works</div><h3>Passive Facial Telemetry</h3><p>Emotica reads the player's face every 2 seconds using on-device facial landmark detection. No camera data ever leaves the browser. Emotion states are classified locally and logged with gameplay events.</p></div>
+      <div class="info-card"><div class="info-tag">What's Unique</div><h3>Emotion × Difficulty Correlation</h3><p>Traditional analytics tells you where players quit. Emotica tells you what they were feeling 10 seconds before they quit — and shows whether the adaptive system's intervention kept them playing.</p></div>
+      <div class="info-card"><div class="info-tag">Business Value</div><h3>The Retention Equation</h3><p>High frustration + no intervention = churn. Emotica quantifies both the problem and the fix. The Retention Score (Engagement ÷ Frustration) gives your design team one number to optimize.</p></div>
+      <div class="info-card"><div class="info-tag">Privacy First</div><h3>Consent-Based Collection</h3><p>Players choose whether to share data before their first game. No camera footage, no PII — only timestamped mood states and game events. Fully anonymizable for aggregate analysis at scale.</p></div>
+    </div>
 
+  </div><!-- end dashboard-content -->
+</div>
+
+<script>
+const MOOD_COLORS={Engaged:'#00f5d4',Bored:'#ffd700',Frustrated:'#ff2d78',Surprised:'#c9b8ff'};
+
+function avg(arr){if(!arr.length)return 0;return arr.reduce((a,b)=>a+b,0)/arr.length;}
+function pct(n,total){return total?((n/total)*100).toFixed(0)+'%':'0%';}
+function dominantMood(log){
+  const c={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
+  log.forEach(d=>{if(c[d.mood]!==undefined)c[d.mood]++;});
+  return Object.keys(c).reduce((a,b)=>c[a]>c[b]?a:b);
+}
+function moodCounts(log){
+  const c={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
+  log.forEach(d=>{if(c[d.mood]!==undefined)c[d.mood]++;});
+  return c;
+}
+
+function clearData(){
+  if(confirm('Clear all session data? This cannot be undone.')){
+    localStorage.removeItem('emotica_all_sessions');
+    location.reload();
+  }
+}
+
+// LOAD DATA 
+const raw = localStorage.getItem('emotica_all_sessions');
+const allSessions = raw ? JSON.parse(raw) : [];
+
+document.getElementById('session-count-badge').textContent = allSessions.length + ' Sessions';
+
+if(!allSessions.length){
+  document.getElementById('no-data').style.display='block';
+} else {
+  document.getElementById('dashboard-content').style.display='block';
+  renderDashboard(allSessions);
+}
+
+function renderDashboard(sessions){
+  // Aggregate mood counts 
+  const aggMood={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
+  let totalRage=0, totalLogs=0;
+
+  sessions.forEach(s=>{
+    const c=moodCounts(s.log||[]);
+    Object.keys(c).forEach(k=>aggMood[k]+=c[k]);
+    totalRage += (s.log||[]).filter(d=>d.ragebait).length;
+    totalLogs += (s.log||[]).length;
+  });
+
+  const totalSessions = sessions.length;
+  const avgScore   = avg(sessions.map(s=>s.finalScore||0)).toFixed(0);
+  const avgTime    = avg(sessions.map(s=>s.duration||0)).toFixed(0);
+  const bestScore  = Math.max(...sessions.map(s=>s.finalScore||0));
+  const engPct     = totalLogs ? ((aggMood.Engaged/totalLogs)*100).toFixed(0) : 0;
+  const frustPct   = totalLogs ? ((aggMood.Frustrated/totalLogs)*100).toFixed(0) : 0;
+  const retention  = frustPct>0 ? (engPct/frustPct).toFixed(2) : engPct>0?'∞':'—';
+
+  document.getElementById('kpi-sessions').textContent  = totalSessions;
+  document.getElementById('kpi-best').textContent      = bestScore;
+  document.getElementById('kpi-avgtime').textContent   = avgTime+'s';
+  document.getElementById('kpi-engage').textContent    = engPct+'%';
+  document.getElementById('kpi-frust').textContent     = frustPct+'%';
+  document.getElementById('kpi-rage').textContent      = totalRage;
+  document.getElementById('kpi-avgscore').textContent  = avgScore;
+  document.getElementById('kpi-retention').textContent = retention;
+
+  // Score trend chart 
+  const stc = document.getElementById('score-trend-chart').getContext('2d');
+  new Chart(stc,{
+    type:'bar',
+    data:{
+      labels: sessions.map((_,i)=>'Game '+(i+1)),
+      datasets:[{
+        label:'Score',
+        data:sessions.map(s=>s.finalScore||0),
+        backgroundColor: sessions.map(s=>(s.finalScore||0)>=bestScore?'rgba(255,215,0,0.6)':'rgba(255,45,120,0.4)'),
+        borderColor: sessions.map(s=>(s.finalScore||0)>=bestScore?'#ffd700':'#ff2d78'),
+        borderWidth:1, borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#555',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+
+  // Mood distribution doughnut
+  const mdc = document.getElementById('mood-dist-chart').getContext('2d');
+  new Chart(mdc,{
+    type:'doughnut',
+    data:{
+      labels:Object.keys(aggMood),
+      datasets:[{data:Object.values(aggMood),backgroundColor:['#ff2d78','#00f5d4','#ffd700','#c9b8ff'],borderWidth:0}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#c9b8ff',font:{family:'Space Grotesk',size:11},padding:12}}}
+    }
+  });
+
+  // Latest session heatmap
+  const latest = sessions[sessions.length-1];
+  const grid = document.getElementById('heatmap-grid');
+  grid.innerHTML='';
+  (latest.log||[]).forEach(d=>{
+    const cell=document.createElement('div');
+    cell.className='hm-cell';
+    cell.style.background=MOOD_COLORS[d.mood]||'#333';
+    cell.title=`${d.timestamp}s — ${d.mood} — Score:${d.score} Health:${d.health}`;
+    grid.appendChild(cell);
+  });
+
+  // Session table
+  const tbody = document.getElementById('session-table-body');
+  tbody.innerHTML='';
+  sessions.forEach((s,i)=>{
+    const log=s.log||[];
+    const c=moodCounts(log);
+    const t=log.length||1;
+    const ep=((c.Engaged/t)*100).toFixed(0);
+    const fp=((c.Frustrated/t)*100).toFixed(0);
+    const rage=log.filter(d=>d.ragebait).length;
+    const dom=dominantMood(log);
+    const verdict = parseInt(ep)>50?'<span class="pill good">ENGAGED</span>':parseInt(fp)>35?'<span class="pill bad">FRUSTRATED</span>':'<span class="pill warn">MIXED</span>';
+    const date=s.date?new Date(s.date).toLocaleString():'—';
+    tbody.innerHTML+=`<tr>
+      <td style="color:#555;font-family:'Space Grotesk',sans-serif;">${i+1}</td>
+      <td style="font-size:12px;color:#555;">${date}</td>
+      <td style="font-family:'Space Grotesk',sans-serif;color:#fff;font-size:16px;">${s.finalScore||0}</td>
+      <td>${s.duration||0}s</td>
+      <td><span style="color:${MOOD_COLORS[dom]||'#fff'};font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:1px;">${dom}</span></td>
+      <td style="color:#ff2d78;">${fp}%</td>
+      <td style="color:#00f5d4;">${ep}%</td>
+      <td style="color:${rage>0?'#ff2d78':'#555'}">${rage}</td>
+      <td>${verdict}</td>
+    </tr>`;
+  });
+
+  // AI Recommendations
+  const recs=[];
+
+  // Frustration analysis
+  if(parseInt(frustPct)>40){
+    const frustSessions=sessions.filter(s=>{const c=moodCounts(s.log||[]);const t=(s.log||[]).length||1;return(c.Frustrated/t)>0.4;});
+    recs.push({tag:'alert',tagLabel:'HIGH FRUSTRATION',text:`<strong>${frustPct}%</strong> of all logged time across ${totalSessions} sessions is in a Frustrated state. ${frustSessions.length} of ${totalSessions} sessions exceeded 40% frustration. Recommendation: <strong>reduce early-game enemy damage</strong> or add a grace window in the first 15 seconds.`});
+  }
+
+  // Boredom analysis
+  const boredPct=totalLogs?((aggMood.Bored/totalLogs)*100).toFixed(0):0;
+  if(parseInt(boredPct)>30){
+    recs.push({tag:'tip',tagLabel:'BOREDOM PATTERN',text:`Players spent <strong>${boredPct}%</strong> of time in a Bored state. The adaptive system compensates by spawning faster enemies — but boredom is recurring. Consider <strong>adding a new enemy type or visual event</strong> at the 25–30 second mark to pre-empt the drop.`});
+  }
+
+  // Ragebait effectiveness
+  if(totalRage>0){
+    const sessionsWithRage=sessions.filter(s=>(s.log||[]).some(d=>d.ragebait));
+    const avgScoreWithRage=avg(sessionsWithRage.map(s=>s.finalScore||0));
+    const sessionsWithoutRage=sessions.filter(s=>!(s.log||[]).some(d=>d.ragebait));
+    const avgScoreWithout=avg(sessionsWithoutRage.map(s=>s.finalScore||0));
+    const diff=avgScoreWithRage-avgScoreWithout;
+    recs.push({tag:'info',tagLabel:'ADAPTIVE SYSTEM ROI',text:`<strong>${totalRage} ragebait event(s)</strong> triggered across all sessions. Sessions with adaptive intervention averaged <strong>${avgScoreWithRage.toFixed(0)} pts</strong> vs <strong>${avgScoreWithout.toFixed(0)} pts</strong> without — a <strong>${diff>=0?'+':''}${diff.toFixed(0)} point difference</strong>. ${diff>0?'Interventions appear to help players recover and continue.':'Consider tuning the intervention trigger threshold.'}`});
+  }
+
+  // Session length trend
+  if(sessions.length>=3){
+    const recent3=sessions.slice(-3).map(s=>s.duration||0);
+    const early3=sessions.slice(0,3).map(s=>s.duration||0);
+    const recentAvg=avg(recent3), earlyAvg=avg(early3);
+    const trend=recentAvg-earlyAvg;
+    recs.push({tag:trend>=0?'tip':'alert',tagLabel:'RETENTION TREND',text:`Average session length across first 3 games: <strong>${earlyAvg.toFixed(0)}s</strong>. Most recent 3 games: <strong>${recentAvg.toFixed(0)}s</strong>. ${trend>=0?`Sessions are getting <strong>longer (+${trend.toFixed(0)}s)</strong> — players are improving and staying engaged.`:`Sessions are getting <strong>shorter (${trend.toFixed(0)}s)</strong> — consider reducing difficulty scaling speed.`}`});
+  }
+
+  // Engagement strength
+  if(parseInt(engPct)>55){
+    recs.push({tag:'tip',tagLabel:'STRONG ENGAGEMENT',text:`Engagement rate of <strong>${engPct}%</strong> is strong. The current difficulty curve appears well-calibrated. Document current enemy spawn rates and speed multipliers as a <strong>baseline for future difficulty tiers</strong>.`});
+  }
+
+  if(!recs.length){
+    recs.push({tag:'info',tagLabel:'LOOKING GOOD',text:'Not enough data for specific recommendations yet. Play more sessions to unlock pattern-based insights.'});
+  }
+
+  const recsContainer=document.getElementById('ai-recs');
+  recsContainer.innerHTML='';
+  recs.forEach(r=>{
+    recsContainer.innerHTML+=`<div class="rec-card"><div class="rec-tag ${r.tag}">${r.tagLabel}</div><p>${r.text}</p></div>`;
+  });
+}
+</script>
 </body>
 </html>

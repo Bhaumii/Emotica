@@ -65,7 +65,7 @@ let elapsedSeconds, lastBonusAt, spawnsPaused, gamePaused;
 let ragebaitActive = false;
 
 // Player object
-const player = { x: 400, y: 300, w: 40, h: 50, speed: 5 };
+const player = { x: 400, y: 300, w: 75, h: 70, speed: 5 };
 
 // Entity pools
 let tickets = [], enemies = [], hpacks = [], particles = [];
@@ -390,8 +390,14 @@ function draw() {
     drawParticles();
 
     // Player
+
     if (playerImg.complete && playerImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 6;
         ctx.drawImage(playerImg, player.x - player.w / 2, player.y - player.h / 2, player.w, player.h);
+        ctx.restore();
     } else {
         ctx.shadowColor = '#ff2d78'; ctx.shadowBlur = 16;
         ctx.fillStyle   = '#7d3cff';
