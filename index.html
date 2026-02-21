@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emotica</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- SETTINGS ICON (always visible on intro) -->
+  <div id="settings-icon" onclick="window.open('dashboard.html','_blank')" title="Developer Portal">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </div>
+
+  <!-- CONSENT POPUP -->
+  <div id="consent-overlay" style="display:none;">
+    <div id="consent-box">
+      <p class="subtitle">DATA & PRIVACY</p>
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;margin-bottom:14px;">Share your session data?</h2>
+      <p style="font-size:14px;color:#c9b8ff;line-height:1.8;margin-bottom:20px;">
+        Emotica can anonymously store your gameplay and emotion data to help improve game design.<br/><br/>
+        <span style="color:#ffd700;font-size:13px;">You can change this anytime by clicking the settings icon.</span>
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button id="consent-yes" style="border-color:#00f5d4;color:#00f5d4;">Yes</button>
+        <button id="consent-no" style="border-color:#555;color:#888;">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div id="intro-screen">
+    <div id="intro-content">
+      <h1 class="glow-title">EMOTICA</h1>
+      <p class="tagline">Your emotions control the game</p>
+      <button id="start-btn">Play</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game-screen" style="display:none;">
+    <div id="hud">
+      <span class="hud-score">Score <strong id="score-display">0</strong></span>
+      <span class="hud-best">Best <strong id="highscore-display">0</strong></span>
+      <span class="hud-health">Health <strong id="health-display">100</strong></span>
+      <span class="hud-mood">Mood <strong id="mood-display">Detecting...</strong></span>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ragebait-overlay"></div>
+    <div id="ragebait-msg" style="display:none;">Take a breath. The system recalibrates.</div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="gameover-screen" style="display:none;">
+    <p class="subtitle">GAME OVER</p>
+    <h1 class="glow-title" id="final-score-text"></h1>
+    <p class="tagline" id="survived-text"></p>
+    <p id="gameover-highscore" style="font-family:'Space Grotesk',sans-serif;color:#ffd700;font-size:18px;margin-bottom:8px;letter-spacing:2px;"></p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
+      <button id="restart-btn">Play Again</button>
+      <button id="report-btn" style="border-color:#00f5d4;color:#00f5d4;">Mood Report</button>
+    </div>
+  </div>
+
+  <!-- REPORT — full screen 3-column layout -->
+  <div id="report-screen" style="display:none;">
+    <div id="report-header">
+      <p class="subtitle">SESSION REPORT</p>
+      <h1 class="glow-title" style="font-size:52px;">Emotica</h1>
+    </div>
+    <div id="report-content">
+
+    <div class="report-panel">
+        <p class="chart-label">Score + Health Over Time</p>
+        <div class="chart-wrapper">
+          <canvas id="moodLineChart"></canvas>
+        </div>
+      </div>
+
+      <div class="report-panel">
+        <p class="chart-label">Mood Split</p>
+        <div class="chart-wrapper">
+          <canvas id="moodPieChart"></canvas>
+        </div>
+      </div>
+
+      <div class="report-panel">
+        <p class="chart-label">Session Stats</p>
+        <div id="stats-box"></div>
+      </div>
+
+    </div>
+    <div id="report-footer">
+      <button id="play-again-from-report">Play Again</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="emotion.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
