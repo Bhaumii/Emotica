@@ -6,6 +6,8 @@
   <title>Emotica</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -45,12 +47,14 @@
   <!-- GAME -->
   <div id="game-screen" style="display:none;">
     <div id="hud">
+      <button id="camera-toggle" onclick="toggleCamera()">📷 Camera: OFF</button>
       <span class="hud-score">Score <strong id="score-display">0</strong></span>
       <span class="hud-best">Best <strong id="highscore-display">0</strong></span>
       <span class="hud-health">Health <strong id="health-display">100</strong></span>
-      <span class="hud-mood">Mood <strong id="mood-display">Detecting...</strong></span>
+      <span class="hud-mood">Mood <strong id="mood-display">Demo</strong></span>
     </div>
     <canvas id="gameCanvas"></canvas>
+    <video id="cam-preview" autoplay muted playsinline></video>
     <div id="ragebait-overlay"></div>
     <div id="ragebait-msg" style="display:none;">Take a breath. The system recalibrates.</div>
   </div>
@@ -103,5 +107,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="emotion.js"></script>
   <script src="game.js"></script>
+
+
 </body>
 </html>

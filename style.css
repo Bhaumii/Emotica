@@ -105,7 +105,7 @@ button:hover { background: #ff2d78; box-shadow: 0 0 24px #ff2d78; }
   position: relative;
 }
 
-/* HUD — color coded */
+/* HUD */
 #hud {
   display: flex;
   justify-content: space-around;
@@ -166,9 +166,9 @@ button:hover { background: #ff2d78; box-shadow: 0 0 24px #ff2d78; }
   padding: 20px;
 }
 
-/* =====================
-   REPORT — 3 equal squares in one horizontal row
-   ===================== */
+
+/*REPORT */
+
 #report-screen {
   width: 100vw;
   height: 100vh;
@@ -254,3 +254,34 @@ button:hover { background: #ff2d78; box-shadow: 0 0 24px #ff2d78; }
 .stat-value.purple { color: #c9b8ff; }
 
 #report-footer { flex-shrink: 0; }
+
+/* CAMERA PREVIEW */
+#cam-preview {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 160px;
+  height: 120px;
+  border: 2px solid #00f5d4;
+  border-radius: 8px;
+  object-fit: cover;
+  z-index: 999;
+  transform: scaleX(-1);
+  display: none;
+  box-shadow: 0 0 20px rgba(0,245,212,0.4);
+}
+
+/* CAMERA TOGGLE BUTTON IN HUD  */
+#camera-toggle {
+  padding: 5px 14px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  border-color: #444;
+  color: #666;
+  border-radius: 4px;
+}
+#camera-toggle.active {
+  border-color: #00f5d4;
+  color: #00f5d4;
+  box-shadow: 0 0 10px rgba(0,245,212,0.3);
+}
