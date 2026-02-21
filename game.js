@@ -648,41 +648,66 @@ function showFloatingMsg(text) {
 
 
 // End Game
-
 function endGame() {
     gameRunning = false;
+
     clearTimeout(ticketTimer);
     clearTimeout(enemyTimer);
     clearInterval(logTimer);
     clearInterval(hpackTimer);
     cancelAnimationFrame(gameLoopId);
 
+    const t = sessionData.length || 1;
+    const c = { Engaged: 0, Bored: 0, Frustrated: 0, Surprised: 0 };
+    sessionData.forEach(d => { if (c[d.mood] !== undefined) c[d.mood]++; });
+
+    // Save to Supabase
+    fetch('https://gaipsjlgcouprwgyemoo.supabase.co/rest/v1/sessions', {
+        method: 'POST',
+        headers: {
+            'Content-Type':  'application/json',
+            'apikey':        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhaXBzamxnY291cHJ3Z3llbW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MTE5NTIsImV4cCI6MjA4NzI4Nzk1Mn0.D7vC95zSTQlRcrzqWrJgQbNCJqexuyZoJwy0Xz-wOQc',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhaXBzamxnY291cHJ3Z3llbW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MTE5NTIsImV4cCI6MjA4NzI4Nzk1Mn0.D7vC95zSTQlRcrzqWrJgQbNCJqexuyZoJwy0Xz-wOQc',
+            'Prefer':        'return=minimal'
+        },
+        body: JSON.stringify({
+            score:          score,
+            time_alive:     elapsedSeconds,
+            engaged_pct:    Math.round(c.Engaged    / t * 100),
+            frustrated_pct: Math.round(c.Frustrated / t * 100),
+            bored_pct:      Math.round(c.Bored      / t * 100),
+            surprised_pct:  Math.round(c.Surprised  / t * 100),
+            ragebait_count: sessionData.filter(d => d.ragebait).length
+        })
+    }).then(res => {
+        if (res.ok) console.log('[Supabase] Session saved ✓');
+        else res.text().then(e => console.warn('[Supabase] Error:', e));
+    }).catch(e => console.warn('[Supabase] Offline:', e.message));
+
+    // Save to localStorage
+    if (dataConsent === 'yes') {
+        const allSessions = JSON.parse(localStorage.getItem('emotica_all_sessions') || '[]');
+        allSessions.push({
+            date:       new Date().toISOString(),
+            finalScore: score,
+            duration:   elapsedSeconds,
+            log:        sessionData,
+        });
+        localStorage.setItem('emotica_all_sessions', JSON.stringify(allSessions));
+    }
+
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('emotica_highscore', highScore);
     }
 
-    // Save session to localStorage if the player consented
-    if (dataConsent === 'yes') {
-        const allSessions = JSON.parse(localStorage.getItem('emotica_all_sessions') || '[]');
-        allSessions.push({
-        date:       new Date().toISOString(),
-        finalScore: score,
-        duration:   elapsedSeconds,
-        highScore:  highScore,
-        log:        sessionData,
-        });
-        localStorage.setItem('emotica_all_sessions', JSON.stringify(allSessions));
-    }
-
-    gameScreen.style.display     = 'none';
-    gameoverScreen.style.display = 'flex';
-    document.getElementById('settings-icon').style.display             = 'block';
-    document.getElementById('final-score-text').textContent = score + ' pts';
-    document.getElementById('survived-text').textContent    = 'Survived ' + elapsedSeconds + 's';
-    document.getElementById('gameover-highscore').textContent          = 'BEST  ' + highScore;
+    gameScreen.style.display      = 'none';
+    gameoverScreen.style.display  = 'flex';
+    document.getElementById('settings-icon').style.display    = 'block';
+    document.getElementById('final-score-text').textContent   = score + ' pts';
+    document.getElementById('survived-text').textContent      = 'Survived ' + elapsedSeconds + 's';
+    document.getElementById('gameover-highscore').textContent = 'BEST  ' + highScore;
 }
-
 
 // Session Report
 

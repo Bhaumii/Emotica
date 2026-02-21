@@ -188,195 +188,210 @@
 </div>
 
 <script>
-const MOOD_COLORS={Engaged:'#00f5d4',Bored:'#ffd700',Frustrated:'#ff2d78',Surprised:'#c9b8ff'};
+const SUPA_URL = 'https://gaipsjlgcouprwgyemoo.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhaXBzamxnY291cHJ3Z3llbW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MTE5NTIsImV4cCI6MjA4NzI4Nzk1Mn0.D7vC95zSTQlRcrzqWrJgQbNCJqexuyZoJwy0Xz-wOQc';
+const MOOD_COLORS = { Engaged:'#00f5d4', Bored:'#ffd700', Frustrated:'#ff2d78', Surprised:'#c9b8ff' };
 
-function avg(arr){if(!arr.length)return 0;return arr.reduce((a,b)=>a+b,0)/arr.length;}
-function pct(n,total){return total?((n/total)*100).toFixed(0)+'%':'0%';}
-function dominantMood(log){
-  const c={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
-  log.forEach(d=>{if(c[d.mood]!==undefined)c[d.mood]++;});
-  return Object.keys(c).reduce((a,b)=>c[a]>c[b]?a:b);
-}
+function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 function moodCounts(log){
-  const c={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
-  log.forEach(d=>{if(c[d.mood]!==undefined)c[d.mood]++;});
-  return c;
+    const c={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
+    (log||[]).forEach(d=>{ if(c[d.mood]!==undefined) c[d.mood]++; });
+    return c;
 }
-
+function dominantMood(log){
+    const c=moodCounts(log);
+    return Object.keys(c).reduce((a,b)=>c[a]>c[b]?a:b);
+}
 function clearData(){
-  if(confirm('Clear all session data? This cannot be undone.')){
-    localStorage.removeItem('emotica_all_sessions');
-    location.reload();
-  }
+    if(confirm('Clear all data?')){ localStorage.removeItem('emotica_all_sessions'); location.reload(); }
 }
 
-// LOAD DATA 
-const raw = localStorage.getItem('emotica_all_sessions');
-const allSessions = raw ? JSON.parse(raw) : [];
+async function loadData(){
+    document.getElementById('session-count-badge').textContent = 'Loading…';
+    try {
+        const res = await fetch(
+            SUPA_URL + '/rest/v1/sessions?select=*&order=created_at.asc&limit=1000',
+            { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } }
+        );
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const rows = await res.json();
+        console.log('[Dashboard] Loaded', rows.length, 'rows from Supabase ✓');
 
-document.getElementById('session-count-badge').textContent = allSessions.length + ' Sessions';
+        // Convert Supabase rows into unified session objects
+        const sessions = rows.map(r => {
+            const total = Math.max(4, Math.floor((r.time_alive||30)/2));
+            const log   = [];
+            [
+                {mood:'Engaged',    pct: r.engaged_pct    ||0},
+                {mood:'Frustrated', pct: r.frustrated_pct ||0},
+                {mood:'Bored',      pct: r.bored_pct      ||0},
+                {mood:'Surprised',  pct: r.surprised_pct  ||0},
+            ].forEach(m => {
+                const n = Math.round(m.pct/100*total);
+                for(let i=0;i<n;i++) log.push({mood:m.mood, timestamp:i*2, score:r.score||0, health:100, ragebait:false});
+            });
+            while(log.length < total) log.push({mood:'Bored', timestamp:log.length*2, score:0, health:100, ragebait:false});
+            return {
+                date:      r.created_at,
+                finalScore: r.score      || 0,
+                duration:  r.time_alive  || 0,
+                log
+            };
+        });
 
-if(!allSessions.length){
-  document.getElementById('no-data').style.display='block';
-} else {
-  document.getElementById('dashboard-content').style.display='block';
-  renderDashboard(allSessions);
+        document.getElementById('session-count-badge').textContent = sessions.length + ' Sessions';
+
+        if(!sessions.length){
+            document.getElementById('no-data').style.display = 'block';
+            return;
+        }
+        document.getElementById('dashboard-content').style.display = 'block';
+        renderDashboard(sessions);
+
+    } catch(e) {
+        console.error('[Dashboard] Failed:', e);
+        document.getElementById('session-count-badge').textContent = 'DB Error';
+        document.getElementById('no-data').style.display = 'block';
+        document.getElementById('no-data').innerHTML = `
+            <h2>Could not reach database</h2>
+            <p>Error: <code style="color:#ff2d78">${e.message}</code><br/><br/>
+            Make sure your Supabase project is active and RLS policies are set.</p>`;
+    }
 }
 
 function renderDashboard(sessions){
-  // Aggregate mood counts 
-  const aggMood={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
-  let totalRage=0, totalLogs=0;
+    const aggMood={Engaged:0,Bored:0,Frustrated:0,Surprised:0};
+    let totalRage=0, totalLogs=0;
+    sessions.forEach(s=>{
+        const c=moodCounts(s.log);
+        Object.keys(c).forEach(k=>aggMood[k]+=c[k]);
+        totalRage += s.log.filter(d=>d.ragebait).length;
+        totalLogs += s.log.length;
+    });
 
-  sessions.forEach(s=>{
-    const c=moodCounts(s.log||[]);
-    Object.keys(c).forEach(k=>aggMood[k]+=c[k]);
-    totalRage += (s.log||[]).filter(d=>d.ragebait).length;
-    totalLogs += (s.log||[]).length;
-  });
+    const bestScore  = Math.max(...sessions.map(s=>s.finalScore||0));
+    const avgScore   = avg(sessions.map(s=>s.finalScore||0)).toFixed(0);
+    const avgTime    = avg(sessions.map(s=>s.duration||0)).toFixed(0);
+    const engPct     = totalLogs ? ((aggMood.Engaged/totalLogs)*100).toFixed(0) : 0;
+    const frustPct   = totalLogs ? ((aggMood.Frustrated/totalLogs)*100).toFixed(0) : 0;
+    const boredPct   = totalLogs ? ((aggMood.Bored/totalLogs)*100).toFixed(0) : 0;
+    const retention  = frustPct>0 ? (engPct/frustPct).toFixed(2) : engPct>0?'∞':'—';
 
-  const totalSessions = sessions.length;
-  const avgScore   = avg(sessions.map(s=>s.finalScore||0)).toFixed(0);
-  const avgTime    = avg(sessions.map(s=>s.duration||0)).toFixed(0);
-  const bestScore  = Math.max(...sessions.map(s=>s.finalScore||0));
-  const engPct     = totalLogs ? ((aggMood.Engaged/totalLogs)*100).toFixed(0) : 0;
-  const frustPct   = totalLogs ? ((aggMood.Frustrated/totalLogs)*100).toFixed(0) : 0;
-  const retention  = frustPct>0 ? (engPct/frustPct).toFixed(2) : engPct>0?'∞':'—';
+    document.getElementById('kpi-sessions').textContent  = sessions.length;
+    document.getElementById('kpi-best').textContent      = bestScore;
+    document.getElementById('kpi-avgtime').textContent   = avgTime+'s';
+    document.getElementById('kpi-engage').textContent    = engPct+'%';
+    document.getElementById('kpi-frust').textContent     = frustPct+'%';
+    document.getElementById('kpi-rage').textContent      = totalRage;
+    document.getElementById('kpi-avgscore').textContent  = avgScore;
+    document.getElementById('kpi-retention').textContent = retention;
 
-  document.getElementById('kpi-sessions').textContent  = totalSessions;
-  document.getElementById('kpi-best').textContent      = bestScore;
-  document.getElementById('kpi-avgtime').textContent   = avgTime+'s';
-  document.getElementById('kpi-engage').textContent    = engPct+'%';
-  document.getElementById('kpi-frust').textContent     = frustPct+'%';
-  document.getElementById('kpi-rage').textContent      = totalRage;
-  document.getElementById('kpi-avgscore').textContent  = avgScore;
-  document.getElementById('kpi-retention').textContent = retention;
+    // Score trend chart
+    new Chart(document.getElementById('score-trend-chart').getContext('2d'),{
+        type:'bar',
+        data:{
+            labels: sessions.map((_,i)=>'Game '+(i+1)),
+            datasets:[{
+                data: sessions.map(s=>s.finalScore||0),
+                backgroundColor: sessions.map(s=>(s.finalScore||0)>=bestScore?'rgba(255,215,0,0.6)':'rgba(255,45,120,0.4)'),
+                borderColor:     sessions.map(s=>(s.finalScore||0)>=bestScore?'#ffd700':'#ff2d78'),
+                borderWidth:1, borderRadius:4
+            }]
+        },
+        options:{
+            responsive:true, maintainAspectRatio:false,
+            plugins:{legend:{display:false}},
+            scales:{
+                x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}},
+                y:{ticks:{color:'#555',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}
+            }
+        }
+    });
 
-  // Score trend chart 
-  const stc = document.getElementById('score-trend-chart').getContext('2d');
-  new Chart(stc,{
-    type:'bar',
-    data:{
-      labels: sessions.map((_,i)=>'Game '+(i+1)),
-      datasets:[{
-        label:'Score',
-        data:sessions.map(s=>s.finalScore||0),
-        backgroundColor: sessions.map(s=>(s.finalScore||0)>=bestScore?'rgba(255,215,0,0.6)':'rgba(255,45,120,0.4)'),
-        borderColor: sessions.map(s=>(s.finalScore||0)>=bestScore?'#ffd700':'#ff2d78'),
-        borderWidth:1, borderRadius:4
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}},
-        y:{ticks:{color:'#555',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}
-      }
+    // Mood doughnut
+    new Chart(document.getElementById('mood-dist-chart').getContext('2d'),{
+        type:'doughnut',
+        data:{
+            labels:['Engaged','Bored','Frustrated','Surprised'],
+            datasets:[{
+                data:[aggMood.Engaged,aggMood.Bored,aggMood.Frustrated,aggMood.Surprised],
+                backgroundColor:['#00f5d4','#ffd700','#ff2d78','#c9b8ff'],
+                borderWidth:0
+            }]
+        },
+        options:{
+            responsive:true, maintainAspectRatio:false,
+            plugins:{legend:{position:'bottom',labels:{color:'#c9b8ff',font:{family:'Space Grotesk',size:11},padding:12}}}
+        }
+    });
+
+    // Heatmap — latest session
+    const latest = sessions[sessions.length-1];
+    const grid   = document.getElementById('heatmap-grid');
+    grid.innerHTML='';
+    latest.log.forEach(d=>{
+        const cell=document.createElement('div');
+        cell.className='hm-cell';
+        cell.style.background=MOOD_COLORS[d.mood]||'#333';
+        cell.title=`${d.timestamp}s — ${d.mood}`;
+        grid.appendChild(cell);
+    });
+
+    // Session table
+    const tbody=document.getElementById('session-table-body');
+    tbody.innerHTML='';
+    sessions.forEach((s,i)=>{
+        const c  =moodCounts(s.log);
+        const t  =s.log.length||1;
+        const ep =((c.Engaged/t)*100).toFixed(0);
+        const fp =((c.Frustrated/t)*100).toFixed(0);
+        const rage=s.log.filter(d=>d.ragebait).length;
+        const dom=dominantMood(s.log);
+        const verdict=parseInt(ep)>50?'<span class="pill good">ENGAGED</span>'
+                     :parseInt(fp)>35?'<span class="pill bad">FRUSTRATED</span>'
+                     :'<span class="pill warn">MIXED</span>';
+        tbody.innerHTML+=`<tr>
+            <td style="color:#555;font-family:'Space Grotesk',sans-serif;">${i+1}</td>
+            <td style="font-size:12px;color:#555;">${s.date?new Date(s.date).toLocaleString():'—'}</td>
+            <td style="font-family:'Space Grotesk',sans-serif;color:#fff;font-size:16px;">${s.finalScore||0}</td>
+            <td>${s.duration||0}s</td>
+            <td><span style="color:${MOOD_COLORS[dom]};font-family:'Space Grotesk',sans-serif;font-size:12px;">${dom}</span></td>
+            <td style="color:#ff2d78;">${fp}%</td>
+            <td style="color:#00f5d4;">${ep}%</td>
+            <td style="color:${rage>0?'#ff2d78':'#555'}">${rage}</td>
+            <td>${verdict}</td>
+        </tr>`;
+    });
+
+    // AI Recommendations
+    const recs=[];
+    if(parseInt(frustPct)>40) recs.push({tag:'alert',tagLabel:'HIGH FRUSTRATION',
+        text:`<strong>${frustPct}%</strong> of time is Frustrated. Reduce early-game enemy damage or add a 15s grace window.`});
+    if(parseInt(boredPct)>30) recs.push({tag:'tip',tagLabel:'BOREDOM PATTERN',
+        text:`Players spent <strong>${boredPct}%</strong> of time Bored. Add a new enemy type at the 25–30 second mark.`});
+    if(totalRage>0){
+        const withRage=sessions.filter(s=>s.log.some(d=>d.ragebait));
+        const noRage  =sessions.filter(s=>!s.log.some(d=>d.ragebait));
+        const diff    =avg(withRage.map(s=>s.finalScore||0))-avg(noRage.map(s=>s.finalScore||0));
+        recs.push({tag:'info',tagLabel:'ADAPTIVE SYSTEM ROI',
+            text:`<strong>${totalRage} ragebait events</strong> fired. Intervention sessions scored <strong>${diff>=0?'+':''}${diff.toFixed(0)} pts</strong> vs non-intervention.`});
     }
-  });
-
-  // Mood distribution doughnut
-  const mdc = document.getElementById('mood-dist-chart').getContext('2d');
-  new Chart(mdc,{
-    type:'doughnut',
-    data:{
-      labels:Object.keys(aggMood),
-      datasets:[{data:Object.values(aggMood),backgroundColor:['#ff2d78','#00f5d4','#ffd700','#c9b8ff'],borderWidth:0}]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{color:'#c9b8ff',font:{family:'Space Grotesk',size:11},padding:12}}}
+    if(sessions.length>=3){
+        const trend=avg(sessions.slice(-3).map(s=>s.duration||0))-avg(sessions.slice(0,3).map(s=>s.duration||0));
+        recs.push({tag:trend>=0?'tip':'alert',tagLabel:'RETENTION TREND',
+            text:`Sessions are getting <strong>${trend>=0?`longer (+${trend.toFixed(0)}s)`:`shorter (${trend.toFixed(0)}s)`}</strong> over time.`});
     }
-  });
+    if(!recs.length) recs.push({tag:'info',tagLabel:'COLLECTING DATA',text:'Play more sessions to unlock pattern-based insights.'});
 
-  // Latest session heatmap
-  const latest = sessions[sessions.length-1];
-  const grid = document.getElementById('heatmap-grid');
-  grid.innerHTML='';
-  (latest.log||[]).forEach(d=>{
-    const cell=document.createElement('div');
-    cell.className='hm-cell';
-    cell.style.background=MOOD_COLORS[d.mood]||'#333';
-    cell.title=`${d.timestamp}s — ${d.mood} — Score:${d.score} Health:${d.health}`;
-    grid.appendChild(cell);
-  });
-
-  // Session table
-  const tbody = document.getElementById('session-table-body');
-  tbody.innerHTML='';
-  sessions.forEach((s,i)=>{
-    const log=s.log||[];
-    const c=moodCounts(log);
-    const t=log.length||1;
-    const ep=((c.Engaged/t)*100).toFixed(0);
-    const fp=((c.Frustrated/t)*100).toFixed(0);
-    const rage=log.filter(d=>d.ragebait).length;
-    const dom=dominantMood(log);
-    const verdict = parseInt(ep)>50?'<span class="pill good">ENGAGED</span>':parseInt(fp)>35?'<span class="pill bad">FRUSTRATED</span>':'<span class="pill warn">MIXED</span>';
-    const date=s.date?new Date(s.date).toLocaleString():'—';
-    tbody.innerHTML+=`<tr>
-      <td style="color:#555;font-family:'Space Grotesk',sans-serif;">${i+1}</td>
-      <td style="font-size:12px;color:#555;">${date}</td>
-      <td style="font-family:'Space Grotesk',sans-serif;color:#fff;font-size:16px;">${s.finalScore||0}</td>
-      <td>${s.duration||0}s</td>
-      <td><span style="color:${MOOD_COLORS[dom]||'#fff'};font-family:'Space Grotesk',sans-serif;font-size:12px;letter-spacing:1px;">${dom}</span></td>
-      <td style="color:#ff2d78;">${fp}%</td>
-      <td style="color:#00f5d4;">${ep}%</td>
-      <td style="color:${rage>0?'#ff2d78':'#555'}">${rage}</td>
-      <td>${verdict}</td>
-    </tr>`;
-  });
-
-  // AI Recommendations
-  const recs=[];
-
-  // Frustration analysis
-  if(parseInt(frustPct)>40){
-    const frustSessions=sessions.filter(s=>{const c=moodCounts(s.log||[]);const t=(s.log||[]).length||1;return(c.Frustrated/t)>0.4;});
-    recs.push({tag:'alert',tagLabel:'HIGH FRUSTRATION',text:`<strong>${frustPct}%</strong> of all logged time across ${totalSessions} sessions is in a Frustrated state. ${frustSessions.length} of ${totalSessions} sessions exceeded 40% frustration. Recommendation: <strong>reduce early-game enemy damage</strong> or add a grace window in the first 15 seconds.`});
-  }
-
-  // Boredom analysis
-  const boredPct=totalLogs?((aggMood.Bored/totalLogs)*100).toFixed(0):0;
-  if(parseInt(boredPct)>30){
-    recs.push({tag:'tip',tagLabel:'BOREDOM PATTERN',text:`Players spent <strong>${boredPct}%</strong> of time in a Bored state. The adaptive system compensates by spawning faster enemies — but boredom is recurring. Consider <strong>adding a new enemy type or visual event</strong> at the 25–30 second mark to pre-empt the drop.`});
-  }
-
-  // Ragebait effectiveness
-  if(totalRage>0){
-    const sessionsWithRage=sessions.filter(s=>(s.log||[]).some(d=>d.ragebait));
-    const avgScoreWithRage=avg(sessionsWithRage.map(s=>s.finalScore||0));
-    const sessionsWithoutRage=sessions.filter(s=>!(s.log||[]).some(d=>d.ragebait));
-    const avgScoreWithout=avg(sessionsWithoutRage.map(s=>s.finalScore||0));
-    const diff=avgScoreWithRage-avgScoreWithout;
-    recs.push({tag:'info',tagLabel:'ADAPTIVE SYSTEM ROI',text:`<strong>${totalRage} ragebait event(s)</strong> triggered across all sessions. Sessions with adaptive intervention averaged <strong>${avgScoreWithRage.toFixed(0)} pts</strong> vs <strong>${avgScoreWithout.toFixed(0)} pts</strong> without — a <strong>${diff>=0?'+':''}${diff.toFixed(0)} point difference</strong>. ${diff>0?'Interventions appear to help players recover and continue.':'Consider tuning the intervention trigger threshold.'}`});
-  }
-
-  // Session length trend
-  if(sessions.length>=3){
-    const recent3=sessions.slice(-3).map(s=>s.duration||0);
-    const early3=sessions.slice(0,3).map(s=>s.duration||0);
-    const recentAvg=avg(recent3), earlyAvg=avg(early3);
-    const trend=recentAvg-earlyAvg;
-    recs.push({tag:trend>=0?'tip':'alert',tagLabel:'RETENTION TREND',text:`Average session length across first 3 games: <strong>${earlyAvg.toFixed(0)}s</strong>. Most recent 3 games: <strong>${recentAvg.toFixed(0)}s</strong>. ${trend>=0?`Sessions are getting <strong>longer (+${trend.toFixed(0)}s)</strong> — players are improving and staying engaged.`:`Sessions are getting <strong>shorter (${trend.toFixed(0)}s)</strong> — consider reducing difficulty scaling speed.`}`});
-  }
-
-  // Engagement strength
-  if(parseInt(engPct)>55){
-    recs.push({tag:'tip',tagLabel:'STRONG ENGAGEMENT',text:`Engagement rate of <strong>${engPct}%</strong> is strong. The current difficulty curve appears well-calibrated. Document current enemy spawn rates and speed multipliers as a <strong>baseline for future difficulty tiers</strong>.`});
-  }
-
-  if(!recs.length){
-    recs.push({tag:'info',tagLabel:'LOOKING GOOD',text:'Not enough data for specific recommendations yet. Play more sessions to unlock pattern-based insights.'});
-  }
-
-  const recsContainer=document.getElementById('ai-recs');
-  recsContainer.innerHTML='';
-  recs.forEach(r=>{
-    recsContainer.innerHTML+=`<div class="rec-card"><div class="rec-tag ${r.tag}">${r.tagLabel}</div><p>${r.text}</p></div>`;
-  });
+    const recsEl=document.getElementById('ai-recs');
+    recsEl.innerHTML='';
+    recs.forEach(r=>{
+        recsEl.innerHTML+=`<div class="rec-card"><div class="rec-tag ${r.tag}">${r.tagLabel}</div><p>${r.text}</p></div>`;
+    });
 }
+
+loadData();
 </script>
+
 </body>
 </html>
