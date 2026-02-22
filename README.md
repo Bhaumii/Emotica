@@ -17,3 +17,6 @@ telemetry to a live cloud database for developer analysis.
 
 ## Tech Stack
 JavaScript · HTML/CSS · MediaPipe · Chart.js · Supabase 
+
+## Try it Out
+https://699a805f8418dbf101ada3cf--zingy-druid-40761a.netlify.app/
