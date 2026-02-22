@@ -90,9 +90,6 @@ function startCam() {
     var video = document.getElementById('cam-preview');
 
     camInstance = new Camera(video, {
-        // The frameProcessing lock is critical. MediaPipe is async — if we send
-        // a new frame before the last one finishes, frames pile up in a queue
-        // and the browser chokes. Dropping frames is fine; freezing is not.
         onFrame: async function() {
         if (frameProcessing) return;
         frameProcessing = true;
@@ -204,12 +201,12 @@ function onResults(results) {
     prevNoseX = nx;
     prevNoseY = ny;
 
-    // Look away — how far the nose is from horizontal center
+    // Look how far the nose is from horizontal center
     var lookAway = Math.max(0, normalize(Math.abs(lm[1].x - 0.5), 0.15, 0.35));
     lookAwayFrames = lookAway > 0.5 ? lookAwayFrames + 1 : Math.max(0, lookAwayFrames - 2);
 
 
-    // Calibration — first 30 frames set the personal eye baseline.
+    // Calibration of the first 30 frames set the personal eye baseline.
     // After that, all eye measurements are relative to the player's own neutral face.
     if (!eyeBaseline) {
         baselineFrames.push(eyeAperture);

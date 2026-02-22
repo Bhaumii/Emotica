@@ -1,4 +1,4 @@
-/* style.css — Emotica  */
+/* style.css Emotica  */
 
 /* Fredoka One = the chunky rounded font from the images */
 @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap');
@@ -16,21 +16,14 @@ html, body {
 }
 
 
-/* ─────────────────────────────────────────────
-   SKY BACKGROUND
-   Every screen except the dashboard gets this.
-   Just add class="sky-bg" to the element.
-   background.png should be in your assets/ folder.
-───────────────────────────────────────────── */
+/* SKY BACKGROUND*/
 
 .sky-bg {
   background: url('assets/background.png') center center / cover no-repeat !important;
 }
 
 
-/* ─────────────────────────────────────────────
-   SETTINGS GEAR — opens dashboard
-───────────────────────────────────────────── */
+/* SETTINGS GEAR — opens dashboard*/
 
 #settings-icon {
   position: fixed;
@@ -50,10 +43,7 @@ html, body {
 }
 
 
-/* ─────────────────────────────────────────────
-   GLOBAL BUTTON RESET
-   We style every button individually below.
-───────────────────────────────────────────── */
+/* GLOBAL BUTTON RESET */
 
 button {
   font-family: 'Fredoka One', cursive;
@@ -64,11 +54,7 @@ button {
 }
 
 
-/* ─────────────────────────────────────────────
-   INTRO SCREEN  (Image 2)
-   Sky background, huge italic "emotica" logo
-   with purple shadow, chunky PLAY button
-───────────────────────────────────────────── */
+/* INTRO SCREEN  */
 
 #intro-screen {
   width: 100vw;
@@ -97,7 +83,7 @@ button {
   font-style: italic;
 }
 
-/* PLAY button — dark purple pill with cream border */
+/* PLAY button: dark purple pill with cream border */
 #start-btn {
   background: #6b52b5;
   border: 4px solid #f5f0e8;
@@ -117,11 +103,7 @@ button {
 }
 
 
-/* ─────────────────────────────────────────────
-   CONSENT OVERLAY
-   Also uses sky background behind it.
-   Same chunky card style as the camera prompt.
-───────────────────────────────────────────── */
+/* CONSENT OVERLAY*/
 
 #consent-overlay {
   position: fixed;
@@ -142,7 +124,7 @@ button {
   width: 90%;
   text-align: center;
   box-shadow: 0 8px 0 #2a2520;
-  margin-top: 30px; /* room for the tab above */
+  margin-top: 30px; 
 }
 /* Brown tab label on top */
 #consent-box::before {
@@ -209,11 +191,7 @@ button {
 #consent-no:hover { transform: translateY(2px); box-shadow: 0 2px 0 #2a2520; }
 
 
-/* ─────────────────────────────────────────────
-   CAMERA PROMPT  (Image 3)
-   Cream card, rust-red "EMOTION ENGINE" tab,
-   white inner content box, teal + green buttons
-───────────────────────────────────────────── */
+/* CAMERA PROMPT  */
 
 #camera-prompt {
   position: fixed;
@@ -238,7 +216,7 @@ button {
   margin-top: 36px; /* room for the red tab above */
 }
 
-/* Red "EMOTION ENGINE" pill tab sitting above the card */
+/* Red "Permissions" pill tab sitting above the card */
 #camera-prompt-box::before {
   content: 'PERMISSION';
   position: absolute;
@@ -286,7 +264,7 @@ button {
   justify-content: center;
 }
 
-/* ENABLE CAMERA — teal pill */
+/* ENABLE CAMERA: teal pill */
 #prompt-enable {
   background: #5bbccc;
   border: 3px solid #2a2520;
@@ -320,9 +298,7 @@ button {
 #prompt-skip:hover { transform: translateY(2px); box-shadow: 0 3px 0 #2a2520; }
 
 
-/* ─────────────────────────────────────────────
-   GAME SCREEN
-───────────────────────────────────────────── */
+/* GAME SCREEN */
 
 #game-screen {
   position: fixed;
@@ -333,11 +309,7 @@ button {
 }
 
 
-/* ─────────────────────────────────────────────
-   HUD BAR  (Image 4)
-   Purple background, each stat is a colored
-   rounded pill. Fredoka One font throughout.
-───────────────────────────────────────────── */
+/* HUD BAR */
 
 #hud {
   display: flex;
@@ -401,9 +373,7 @@ button {
 }
 
 
-/* ─────────────────────────────────────────────
-   CAMERA PREVIEW + HAND LANDMARK OVERLAY
-───────────────────────────────────────────── */
+/* CAMERA PREVIEW + HAND LANDMARK OVERLAY*/
 
 #cam-preview {
   position: fixed;
@@ -433,9 +403,7 @@ button {
 }
 
 
-/* ─────────────────────────────────────────────
-   RAGEBAIT OVERLAY
-───────────────────────────────────────────── */
+/* RAGEBAIT OVERLAY */
 
 #ragebait-overlay {
   position: fixed;
@@ -467,9 +435,7 @@ button {
 }
 
 
-/* ─────────────────────────────────────────────
-   PAUSE SCREEN
-───────────────────────────────────────────── */
+/* PAUSE SCREEN*/
 
 #pause-screen {
   position: fixed;
@@ -543,9 +509,7 @@ button {
 #pause-mood { color: #5bbccc; }
 
 
-/* ─────────────────────────────────────────────
-   GAME OVER SCREEN
-───────────────────────────────────────────── */
+/* GAME OVER SCREEN */
 
 #gameover-screen {
   width: 100vw; height: 100vh;
@@ -621,10 +585,7 @@ button {
 #report-btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 rgba(0,0,0,0.3); }
 
 
-/* ─────────────────────────────────────────────
-   SESSION REPORT SCREEN
-   Keeps the sky background, cream panels
-───────────────────────────────────────────── */
+/* SESSION REPORT SCREEN */
 
 #report-screen {
   width: 100vw; height: 100vh;
@@ -740,10 +701,7 @@ button {
 #play-again-from-report:hover { transform: translateY(2px); box-shadow: 0 3px 0 rgba(0,0,0,0.3); }
 
 
-/* ─────────────────────────────────────────────
-   HELPER — old classes that game.js might use
-   Keep them alive so nothing breaks
-───────────────────────────────────────────── */
+/* HELPER */
 
 .subtitle {
   font-family: 'Fredoka One', cursive;

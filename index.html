@@ -7,8 +7,7 @@
   <link rel="stylesheet" href="style.css"/>
 
   <!--
-    MediaPipe loaded in <head> so the WASM modules are ready
-    before the player even clicks Play.
+    MediaPipe loaded in <head> so the WASM modules are ready before the player even clicks Play.
   -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -16,7 +15,7 @@
 </head>
 <body>
 
-  <!-- Settings gear — always visible, opens dashboard in a new tab -->
+  <!-- Settings gear: always visible, opens dashboard in a new tab -->
   <div id="settings-icon" onclick="window.open('dashboard.html','_blank')" title="Developer Portal">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3"/>
@@ -25,10 +24,7 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════
-       DATA CONSENT (first visit only)
-       sky-bg so the background shows through
-  ════════════════════════════════════════ -->
+  <!-- DATA CONSENT (first visit only) -->
 
   <div id="consent-overlay" class="sky-bg" style="display:none;">
     <div id="consent-box">
@@ -45,10 +41,7 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════
-       CAMERA PROMPT (shown when Play is clicked)
-       sky-bg so clouds show behind the card
-  ════════════════════════════════════════ -->
+  <!-- CAMERA PROMPT -->
 
   <div id="camera-prompt" class="sky-bg" style="display:none;">
     <div id="camera-prompt-box">
@@ -72,10 +65,7 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════
-       INTRO SCREEN  (Image 2)
-       sky-bg, big italic "emotica", PLAY button
-  ════════════════════════════════════════ -->
+  <!-- INTRO SCREEN  (Image 2) -->
 
   <div id="intro-screen" class="sky-bg">
     <h1 class="intro-logo">Emotica</h1>
@@ -83,9 +73,7 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════
-       GAME SCREEN
-  ════════════════════════════════════════ -->
+  <!-- GAME SCREEN-->
 
   <div id="game-screen" class="sky-bg" style="display:none;">
 
@@ -146,9 +134,7 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════
-       GAME OVER SCREEN
-  ════════════════════════════════════════ -->
+  <!--GAME OVER SCREEN-->
 
   <div id="gameover-screen" class="sky-bg" style="display:none;">
     <p class="gameover-label">Game Over</p>
@@ -162,9 +148,7 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════
-       SESSION REPORT SCREEN
-  ════════════════════════════════════════ -->
+  <!--SESSION REPORT SCREEN-->
 
   <div id="report-screen" class="sky-bg" style="display:none;">
     <div id="report-header">
@@ -196,5 +180,11 @@
   <script src="emotion.js"></script>
   <script src="game.js"></script>
 
+  <script>
+  document.addEventListener('click', function startBGM(){
+      menuMusic.play().catch(()=>{});
+      document.removeEventListener('click', startBGM);
+  }, { once: true });
+  </script>
 </body>
 </html>

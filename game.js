@@ -1,6 +1,28 @@
 // game.js — Emotica Now
 // Core game loop, input handling, spawning, difficulty, and reporting.
 
+// music
+const menuMusic = new Audio('assets/music_menu.mp3');
+menuMusic.loop   = true;
+menuMusic.volume = 0.4;
+
+const gameMusic = new Audio('assets/music_game.mp3');
+gameMusic.loop   = true;
+gameMusic.volume = 0.5;
+
+function playMenuMusic(){
+    gameMusic.pause(); gameMusic.currentTime = 0;
+    menuMusic.play().catch(()=>{});
+}
+function playGameMusic(){
+    menuMusic.pause(); menuMusic.currentTime = 0;
+    gameMusic.play().catch(()=>{});
+}
+function stopAllMusic(){
+    menuMusic.pause(); menuMusic.currentTime = 0;
+    gameMusic.pause(); gameMusic.currentTime = 0;
+}
+
 let sessionData = [];
 let highScore   = parseInt(localStorage.getItem('emotica_highscore') || '0');
 let dataConsent = localStorage.getItem('emotica_consent'); // 'yes', 'no', or null on first visit
@@ -86,8 +108,11 @@ let enemySpeedBase = 1.2;
 
 // Camera Prompt
 
+
 function handleStartClick() {
     const prompt = document.getElementById('camera-prompt');
+
+    playMenuMusic(); // ADD THIS LINE
 
     if (window.cameraIsOn) {
         startGame();
@@ -99,14 +124,14 @@ function handleStartClick() {
     document.getElementById('prompt-enable').onclick = function() {
         prompt.style.display = 'none';
         toggleCamera();
-        setTimeout(startGame, 300); // give the camera a moment to start up
+        setTimeout(startGame, 300);
     };
 
     document.getElementById('prompt-skip').onclick = function() {
         prompt.style.display = 'none';
         startGame();
     };
-    }
+}
 
 
 // Pause
@@ -147,6 +172,7 @@ function startGame() {
             score          = 0;
             health         = 100;
             gameRunning    = true;
+            playGameMusic();
             gamePaused     = false;
             elapsedSeconds = 0;
             lastBonusAt    = 0;
@@ -592,6 +618,16 @@ function applyDifficulty() {
         diffEl.textContent = d.label;
         diffEl.style.color = d.color;
     }
+
+    // Music reacts to mood
+    const mood = window.currentMood;
+    if(mood === 'Frustrated'){
+        gameMusic.volume = 0.3; // quieter when frustrated = calming
+    } else if(mood === 'Bored'){
+        gameMusic.volume = 0.7; // louder/more intense when bored
+    } else if(mood === 'Engaged'){
+        gameMusic.volume = 0.5; // balanced when engaged
+    }
 }
 
 
@@ -650,6 +686,7 @@ function showFloatingMsg(text) {
 // End Game
 function endGame() {
     gameRunning = false;
+    stopAllMusic();
 
     clearTimeout(ticketTimer);
     clearTimeout(enemyTimer);
@@ -799,3 +836,4 @@ function avg(arr) {
     if (!arr.length) return 0;
     return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
+
