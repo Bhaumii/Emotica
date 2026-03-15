@@ -11,7 +11,7 @@ Modern games lose billions to **player churn**, yet studios rarely know *why* pl
 
 By bridging the gap between player psychology and game mechanics, we allow developers to stop guessing and start scaling engagement.
 
-[Try the Demo](https://699a805f8418dbf101ada3cf--zingy-druid-40761a.netlify.app/) | [Devpost Submission]([https://devpost.com/software/emotica](https://devpost.com/software/ec-b6cfai))
+[Try the Demo](https://699a805f8418dbf101ada3cf--zingy-druid-40761a.netlify.app/) | [Devpost Submission](https://devpost.com/software/ec-b6cfai)
 
 
 ## Key Technical Features
